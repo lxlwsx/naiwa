@@ -12,9 +12,13 @@ test('manifest declares the bundle id and public entry points', () => {
   assert.equal(pkg.name, 'dsh-naiwa-pet');
   assert.equal(pkg.type, 'module');
   assert.ok(pkg.version, 'version is required for install_bundle');
-  assert.deepEqual(Object.keys(pkg.exports).sort(), ['.', './client', './icon', './locale/*.json'].sort());
+  for (const entry of ['.', './client', './icon', './locale/*.json', './content', './core']) {
+    assert.ok(pkg.exports[entry], 'manifest is missing export ' + entry);
+  }
   assert.equal(pkg.exports['.'], './index.js');
   assert.equal(pkg.exports['./client'], './client.js');
+  assert.equal(pkg.exports['./content'], './content.js');
+  assert.equal(pkg.exports['./core'], './pet-core.js');
 });
 
 test('manifest marks the package as a DSH bundle with a web client half', () => {

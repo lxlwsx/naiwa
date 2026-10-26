@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { assetsDir, pngInfo, readJson } from './support.mjs';
@@ -9,6 +10,7 @@ const frames = sprite.frames ?? {};
 const frameNames = ['front', 'front_closed', 'side'];
 const canvasWidth = sprite.canvas?.width;
 const canvasHeight = sprite.canvas?.height;
+const outfitsDir = join(assetsDir, 'outfits');
 
 test('sprite contract declares the shared canvas and all frames', () => {
   assert.deepEqual({ width: canvasWidth, height: canvasHeight }, { width: 640, height: 768 });
@@ -76,4 +78,48 @@ test('eye anchors are recorded inside the face area', () => {
     }
   }
   assert.deepEqual(frames.front_closed.eye_centers_pct, frames.front.eye_centers_pct);
+});
+
+test('outfit index lists the base outfit and four hanfu seasons', () => {
+  const index = readJson(join(outfitsDir, 'index.json'));
+  assert.equal(index.default, 'classic');
+  const ids = index.outfits.map((outfit) => outfit.id);
+  assert.deepEqual(ids, ['classic', 'hanfu-spring', 'hanfu-summer', 'hanfu-autumn', 'hanfu-winter']);
+  for (const outfit of index.outfits) {
+    assert.ok(outfit.name.zh && outfit.name.en, 'outfit name must be localized: ' + outfit.id);
+    if (outfit.id === 'classic') {
+      assert.equal(outfit.dir, null, 'the base outfit must reuse the base frames');
+      continue;
+    }
+    assert.equal(outfit.season, outfit.id.replace('hanfu-', ''));
+    assert.equal(outfit.dir, outfit.id);
+    assert.ok(existsSync(join(outfitsDir, outfit.dir)), 'missing outfit dir: ' + outfit.dir);
+    const meta = readJson(join(outfitsDir, outfit.dir, 'meta.json'));
+    assert.equal(meta.season, outfit.season);
+    assert.ok(meta.name.zh && meta.name.en);
+    assert.ok(Array.isArray(meta.frames));
+    assert.ok(meta.eye_centers_pct.left && meta.eye_centers_pct.right);
+    assert.ok(existsSync(join(outfitsDir, outfit.dir, 'README.md')));
+  }
+});
+
+test('outfits README keeps the shared canvas contract for future art', () => {
+  const readme = readFileSync(join(outfitsDir, 'README.md'), 'utf8');
+  for (const token of ['640', '768', '730', '608', 'front.png', 'front-closed.png', 'side.png', 'meta.json']) {
+    assert.ok(readme.includes(token), 'outfits README is missing ' + token);
+  }
+});
+
+test('any outfit art already dropped in keeps the base canvas contract', () => {
+  for (const entry of readdirSync(outfitsDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    for (const frame of ['front.png', 'front-closed.png', 'side.png']) {
+      const path = join(outfitsDir, entry.name, frame);
+      if (!existsSync(path)) continue;
+      const info = pngInfo(path);
+      assert.equal(info.width, 640, path + ' width');
+      assert.equal(info.height, 768, path + ' height');
+      assert.equal(info.colorType, 6, path + ' must be RGBA');
+    }
+  }
 });

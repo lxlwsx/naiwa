@@ -1,0 +1,18 @@
+{
+  "name": {
+    "zh": "汉服·春",
+    "en": "Hanfu · Spring"
+  },
+  "season": "spring",
+  "eye_centers_pct": {
+    "left": {
+      "x": 32.73,
+      "y": 25.52
+    },
+    "right": {
+      "x": 67.11,
+      "y": 25.39
+    }
+  },
+  "frames": []
+}
