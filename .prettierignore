@@ -1,0 +1,8 @@
+node_modules/
+.temp/
+.git/
+pnpm-lock.yaml
+.githooks/
+*.png
+AGENTS.md
+package-lock.json

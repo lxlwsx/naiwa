@@ -1,0 +1,16 @@
+# 依赖与构建产物
+node_modules/
+.temp/
+
+# 本地私有配置（缓存/store 路径等）
+.npmrc
+
+# 工具生成的临时/调试产物
+tools/debug/
+__pycache__/
+*.pyc
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+*.log

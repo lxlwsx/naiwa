@@ -1,0 +1,10 @@
+#!/bin/sh
+# Conventional Commits gate (commitlint). Fix the message, never bypass.
+set -eu
+
+node -e "process.exit(0)" 2>/dev/null || {
+  echo "commit-msg: node is not on PATH; install Node >= 20.19 and retry" >&2
+  exit 1
+}
+
+node node_modules/@commitlint/cli/cli.js --edit "$1"
