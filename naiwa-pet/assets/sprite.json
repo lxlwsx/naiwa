@@ -1,0 +1,140 @@
+{
+  "name": "naiwa-pet sprites",
+  "source": "three-view reference (1536x1024); background removed per view with a border-seeded flood fill (near-white / low-chroma) plus a soft chroma alpha ramp and colour unmix",
+  "canvas": {
+    "width": 640,
+    "height": 768
+  },
+  "subject_scale": 1.17375,
+  "feet_baseline_y": 731,
+  "safe_margin_px": {
+    "left": 16,
+    "right": 16,
+    "top": 42,
+    "bottom": 37
+  },
+  "frames": {
+    "front": {
+      "file": "naiwa-front.png",
+      "canvas": [
+        640,
+        768
+      ],
+      "bbox": {
+        "x": 16,
+        "y": 44,
+        "w": 608,
+        "h": 687
+      },
+      "subject_height": 687,
+      "feet_baseline_y": 730,
+      "bytes": 304843,
+      "facing": "front",
+      "eyes_closed": false,
+      "eye_centers_px": [
+        [
+          209.5,
+          196.0
+        ],
+        [
+          429.5,
+          195.0
+        ]
+      ],
+      "eye_centers_pct": [
+        [
+          32.73,
+          25.52
+        ],
+        [
+          67.11,
+          25.39
+        ]
+      ],
+      "eye_boxes_px": [
+        [
+          168,
+          147,
+          84,
+          99
+        ],
+        [
+          389,
+          145,
+          82,
+          101
+        ]
+      ]
+    },
+    "front_closed": {
+      "file": "naiwa-front-closed.png",
+      "canvas": [
+        640,
+        768
+      ],
+      "bbox": {
+        "x": 16,
+        "y": 44,
+        "w": 608,
+        "h": 687
+      },
+      "subject_height": 687,
+      "feet_baseline_y": 730,
+      "bytes": 282940,
+      "facing": "front",
+      "eyes_closed": true,
+      "eye_centers_px": [
+        [
+          209.5,
+          196.0
+        ],
+        [
+          429.5,
+          195.0
+        ]
+      ],
+      "eye_centers_pct": [
+        [
+          32.73,
+          25.52
+        ],
+        [
+          67.11,
+          25.39
+        ]
+      ],
+      "eye_boxes_px": [
+        [
+          168,
+          147,
+          84,
+          99
+        ],
+        [
+          389,
+          145,
+          82,
+          101
+        ]
+      ]
+    },
+    "side": {
+      "file": "naiwa-side.png",
+      "canvas": [
+        640,
+        768
+      ],
+      "bbox": {
+        "x": 84,
+        "y": 42,
+        "w": 473,
+        "h": 689
+      },
+      "subject_height": 689,
+      "feet_baseline_y": 730,
+      "bytes": 277858,
+      "facing": "left",
+      "eyes_closed": false
+    }
+  }
+}
