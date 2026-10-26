@@ -118,3 +118,9 @@ plugin_manager install_bundle  target = <绝对路径>/naiwa-pet
 ## 和 dsh-pet 共存
 
 本插件是独立 bundle，不会改动 `dsh-pet`（那只蓝色大肥鱼）的任何东西。两只宠物可以同时在场。
+
+## ������̬ʵ��
+
+![����͸����ʵ��](assets/preview-desktop.png)
+
+��CDP ץ�Ĵ������ݣ�͸�������������洩͸�����ڱ����ö����ޱ߿򡢲�������������
