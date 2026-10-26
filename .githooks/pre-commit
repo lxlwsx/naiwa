@@ -1,0 +1,17 @@
+#!/bin/sh
+# Repo gate: static analysis + unit tests + lint/format + secret scan.
+# Never bypass with --no-verify; fix the code or the gate instead.
+set -eu
+
+node -e "process.exit(0)" 2>/dev/null || {
+  echo "pre-commit: node is not on PATH; install Node >= 20.19 and retry" >&2
+  exit 1
+}
+
+# Git runs hooks from the work-tree root. Hand the staged list to the scanner as
+# a file: the DSH sandbox denies captured child stdio, so avoid $() pipes here.
+mkdir -p .temp
+git diff --cached --name-only --diff-filter=ACMR > .temp/staged-files.txt
+
+node scripts/scan-secrets.mjs --staged .temp/staged-files.txt
+node scripts/verify.mjs --pre-commit

@@ -32,7 +32,7 @@ test('client registers exactly one overlay entry owned by this plugin', () => {
 
 test('asset base URL agrees with the host route prefix', () => {
   assert.ok(hostPrefix.startsWith('/dsh-naiwa-pet-'), 'route prefix must be plugin specific');
-  assert.match(client, new RegExp('const ASSET_BASE = \'' + hostPrefix.replace(/[/-]/g, '\\$&') + '/assets/\''));
+  assert.match(client, new RegExp("const ASSET_BASE = '" + hostPrefix.replace(/[/-]/g, '\\$&') + "/assets/'"));
 });
 
 test('every sprite frame referenced by the client exists on disk', () => {

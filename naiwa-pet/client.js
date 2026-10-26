@@ -625,17 +625,21 @@ window.__ModuleLoader__.load({
               'div',
               { key: item.id, className: 'naiwa-fx' },
               item.parts.map((part, index) =>
-                h('span', {
-                  key: index,
-                  className: item.kind === 'hearts' ? 'naiwa-heart' : 'naiwa-dust',
-                  style: {
-                    left: part.left,
-                    top: item.kind === 'hearts' ? part.top : undefined,
-                    fontSize: part.size + 'px',
-                    '--dx': part.dx,
-                    animationDelay: part.delay + 'ms',
+                h(
+                  'span',
+                  {
+                    key: index,
+                    className: item.kind === 'hearts' ? 'naiwa-heart' : 'naiwa-dust',
+                    style: {
+                      left: part.left,
+                      top: item.kind === 'hearts' ? part.top : undefined,
+                      fontSize: part.size + 'px',
+                      '--dx': part.dx,
+                      animationDelay: part.delay + 'ms',
+                    },
                   },
-                }, part.glyph),
+                  part.glyph,
+                ),
               ),
             ),
           ),
@@ -664,10 +668,7 @@ window.__ModuleLoader__.load({
         const t = ctx.locale.bind(NS);
 
         ctx.slots.inject('shell.overlay', function* () {
-          yield ctx.slots.register(
-            { name: 'shell.overlay', id: 'naiwa-pet', order: 1200 },
-            () => h(NaiwaPet, { t }),
-          );
+          yield ctx.slots.register({ name: 'shell.overlay', id: 'naiwa-pet', order: 1200 }, () => h(NaiwaPet, { t }));
         });
       },
     };

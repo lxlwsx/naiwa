@@ -17,8 +17,7 @@ export function readJson(path) {
 /** Read width/height/colour-type straight out of the PNG IHDR chunk. */
 export function pngInfo(path) {
   const bytes = readFileSync(path);
-  const signatureOk =
-    bytes.length > 26 && bytes[0] === 0x89 && bytes.subarray(1, 4).toString('latin1') === 'PNG';
+  const signatureOk = bytes.length > 26 && bytes[0] === 0x89 && bytes.subarray(1, 4).toString('latin1') === 'PNG';
   if (!signatureOk) throw new Error('not a PNG file: ' + path);
   return {
     bytes: bytes.length,
