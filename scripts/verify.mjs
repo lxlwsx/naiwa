@@ -16,14 +16,21 @@ const preCommit = process.argv.includes('--pre-commit');
 const tests = [
   'tests/manifest.test.mjs',
   'tests/assets.test.mjs',
+  'tests/host-config.test.mjs',
   'tests/host-route.test.mjs',
   'tests/client-contract.test.mjs',
+  'tests/pet-core.test.mjs',
+  'tests/content.test.mjs',
+  'tests/desktop.test.mjs',
   'tests/publish.test.mjs',
   'tests/dns.test.mjs',
 ];
 
 const steps = [];
-if (!preCommit) steps.push({ name: 'build', args: ['scripts/check-package.mjs'] });
+if (!preCommit) {
+  steps.push({ name: 'build', args: ['scripts/build-client.mjs'] });
+  steps.push({ name: 'package', args: ['scripts/check-package.mjs'] });
+}
 steps.push({ name: 'test', args: ['--test', '--test-isolation=none', ...tests] });
 steps.push({ name: 'lint', args: ['node_modules/eslint/bin/eslint.js', '.'] });
 steps.push({ name: 'format', args: ['node_modules/prettier/bin/prettier.cjs', '--check', '.'] });
