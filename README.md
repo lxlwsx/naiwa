@@ -60,6 +60,27 @@ npm run security   # 密钥扫描 + 危险原语扫描
 - 沙箱提示：Git for Windows 的 hooks 需要命名管道，DSH 文件沙箱会拒绝（`Win32 error 5`）。按 AGENTS.md 1.4
   禁止 `--no-verify`，因此在沙箱内提交时对 `git commit` 使用完整访问权限，让 hooks 真实执行。
 
+## 受限网络：`git push` 不可用时
+
+有些机器上 shell 解析不了 `github.com`（浏览器走系统代理能开，但 git/curl 不走），此时普通 push 会失败。
+仓库提供两个逃生工具，都只通过可达的 `api.github.com` 工作：
+
+```text
+# 1) 诊断 DNS，并给出 hosts 修复建议（--apply 需要管理员权限）
+npm run dns:check
+npm run dns:check -- --apply
+
+# 2) 用 GitHub Git Data API 把本地提交范围写成远端分支（等价于 push 的内容）
+npm run publish:github -- --repo owner/name --branch feat/xxx --from <本地基准sha>
+```
+
+约束与保证：
+
+- `publish-github.mjs` **拒绝写入 `main` / `master`**，只创建/更新侧分支，主分支只能通过 PR 合并；
+- 认证取 `GH_TOKEN` 或 `gh auth token`，token 不会打印；请求只发往 `https://api.github.com`；
+- 真实运行前会校验远端基准分支与本地提交范围（`git merge-base --is-ancestor`）；
+- 改名/重命名提交会被 `parseDiff` 明确拒绝，避免把文件路径错配后写坏仓库。
+
 ## Git hooks 与分支
 
 ```text

@@ -18,6 +18,8 @@ const tests = [
   'tests/assets.test.mjs',
   'tests/host-route.test.mjs',
   'tests/client-contract.test.mjs',
+  'tests/publish.test.mjs',
+  'tests/dns.test.mjs',
 ];
 
 const steps = [];
