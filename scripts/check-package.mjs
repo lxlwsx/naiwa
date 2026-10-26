@@ -2,8 +2,8 @@
  * "build" gate: validate the deliverable package without spawning a packer.
  *
  * Checks the bundle manifest, the declared file set, the patch row, the locale
- * metadata, the icon and every sprite referenced by the client half. A local
- * directory install links the checkout, so this check operates on real files.
+ * metadata, the icon, the sprite frames and the v0.2 outfit/desktop layout.
+ * A local directory install links the checkout, so this check operates on real files.
  */
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
@@ -49,6 +49,11 @@ function matchGlob(pattern, file) {
   return walk(0, 0);
 }
 
+function pngSize(path) {
+  const bytes = readFileSync(path);
+  return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
+}
+
 const pkg = readJson(join(pluginDir, 'package.json'));
 for (const field of ['name', 'version', 'type', 'exports', 'files', 'dsh']) {
   if (pkg[field] === undefined) fail('package.json is missing "' + field + '"');
@@ -87,17 +92,86 @@ for (const locale of ['zh', 'en']) {
 
 if (!existsSync(join(pluginDir, pkg.icon ?? ''))) fail('declared icon is missing: ' + pkg.icon);
 
-const client = readFileSync(join(pluginDir, 'client.js'), 'utf8');
+// ---- 基础帧 ----
 const host = readFileSync(join(pluginDir, 'index.js'), 'utf8');
-const referenced = [...client.matchAll(/ASSET_BASE \+ '([^']+\.png)'/g)].map((match) => match[1]);
 const hostPrefix = host.match(/const ROUTE_PREFIX = '([^']+)'/)?.[1];
 if (!hostPrefix) fail('host half does not declare ROUTE_PREFIX');
-if (!client.includes("const ASSET_BASE = '" + hostPrefix + "/assets/'"))
-  fail('client asset base does not match the host route');
-for (const file of referenced) {
-  if (!existsSync(join(pluginDir, 'assets', file))) fail('client references a missing sprite: ' + file);
+const client = readFileSync(join(pluginDir, 'client.js'), 'utf8');
+if (!client.includes("const ROUTE = '" + hostPrefix + "'")) fail('client route prefix does not match the host route');
+if (!client.includes('window.__ModuleLoader__.load(')) fail('client.js is not a loader bundle');
+const baseFrames = ['naiwa-front.png', 'naiwa-front-closed.png', 'naiwa-side.png'];
+for (const file of baseFrames) {
+  const path = join(pluginDir, 'assets', file);
+  if (!existsSync(path)) {
+    fail('missing base frame: ' + file);
+    continue;
+  }
+  const size = pngSize(path);
+  if (size.width !== 640 || size.height !== 768) fail('base frame must stay 640x768: ' + file);
 }
-if (referenced.length === 0) fail('client half references no sprite frames');
+
+// ---- 换装 ----
+const outfitsDir = join(pluginDir, 'assets', 'outfits');
+const outfitIndexPath = join(outfitsDir, 'index.json');
+if (!existsSync(outfitIndexPath)) {
+  fail('missing assets/outfits/index.json');
+} else {
+  const index = readJson(outfitIndexPath);
+  if (!Array.isArray(index.outfits) || index.outfits.length === 0) fail('outfits index has no outfits');
+  const ids = new Set();
+  for (const outfit of index.outfits ?? []) {
+    if (!outfit || typeof outfit.id !== 'string' || !/^[a-z0-9][a-z0-9-]{0,31}$/.test(outfit.id)) {
+      fail('invalid outfit id: ' + JSON.stringify(outfit));
+      continue;
+    }
+    if (ids.has(outfit.id)) fail('duplicate outfit id: ' + outfit.id);
+    ids.add(outfit.id);
+    if (outfit.dir === null || outfit.dir === undefined) continue;
+    const dir = join(outfitsDir, outfit.dir);
+    if (!existsSync(dir)) {
+      fail('outfit dir is missing: ' + outfit.dir);
+      continue;
+    }
+    if (!existsSync(join(dir, 'meta.json'))) fail('outfit meta is missing: ' + outfit.dir + '/meta.json');
+    else {
+      const meta = readJson(join(dir, 'meta.json'));
+      if (!meta.name || !meta.season || !Array.isArray(meta.frames))
+        fail('outfit meta is missing name/season/frames: ' + outfit.dir);
+    }
+    for (const frame of ['front.png', 'front-closed.png', 'side.png']) {
+      const path = join(dir, frame);
+      if (existsSync(path)) {
+        const size = pngSize(path);
+        if (size.width !== 640 || size.height !== 768)
+          fail('outfit frame must be 640x768: ' + outfit.dir + '/' + frame);
+      }
+    }
+  }
+  if (!index.outfits.some((outfit) => outfit.id === index.default)) fail('outfits index default is not in the list');
+}
+
+// ---- 桌面壳 ----
+const desktopDir = join(pluginDir, 'desktop');
+for (const file of ['main.cjs', 'preload.cjs', 'pet.html', 'pet-app.js', 'window-physics.cjs']) {
+  if (!existsSync(join(desktopDir, file))) fail('missing desktop file: ' + file);
+}
+if (existsSync(join(desktopDir, 'pet.html'))) {
+  const html = readFileSync(join(desktopDir, 'pet.html'), 'utf8');
+  if (!html.includes('pet-app.js')) fail('desktop/pet.html must load pet-app.js');
+  if (!html.includes('pet-root')) fail('desktop/pet.html must provide #pet-root');
+}
+const generated = [
+  ['client.js', client],
+  [
+    'desktop/pet-app.js',
+    existsSync(join(desktopDir, 'pet-app.js')) ? readFileSync(join(desktopDir, 'pet-app.js'), 'utf8') : '',
+  ],
+];
+for (const [name, source] of generated) {
+  if (!source) continue;
+  if (/^\s*(import|export)\s/m.test(source)) fail(name + ' must be a classic script (no ESM syntax)');
+  if (!source.includes('createPet(')) fail(name + ' does not embed the shared pet core');
+}
 
 for (const forbidden of ['node_modules', '.temp', 'debug', '__pycache__']) {
   if (existsSync(join(pluginDir, forbidden))) fail('plugin directory must not ship ' + forbidden + '/');
@@ -112,5 +186,7 @@ if (failures.length > 0) {
 console.log('[build] PASS');
 console.log('  package      ' + pkg.name + '@' + pkg.version);
 console.log('  runtime files ' + runtime.length + ' covered by ' + files.length + ' files patterns');
-console.log('  sprites      ' + referenced.join(', '));
+console.log('  sprites      ' + baseFrames.join(', '));
+console.log('  outfits      ' + (existsSync(outfitIndexPath) ? readJson(outfitIndexPath).outfits.length : 0));
+console.log('  desktop      ' + listFiles(desktopDir).length + ' files');
 console.log('  route        ' + hostPrefix);

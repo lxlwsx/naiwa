@@ -6,3 +6,6 @@ pnpm-lock.yaml
 *.png
 AGENTS.md
 package-lock.json
+naiwa-pet/client.js
+naiwa-pet/desktop/pet-app.js
+

@@ -1,24 +1,31 @@
 {
   "name": "dsh-naiwa-pet",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "黄色奶娃桌宠 demo：浮在 DSH 页面上的小奶娃，可以拖动、会自己走路、会眨眼和撒娇。",
+  "description": "黄色奶娃桌宠：DSH 页面内浮窗 + 透明置顶桌面窗，可拖动、换装、点播动作表情。",
   "icon": "icon.png",
   "type": "module",
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",
+    "./content": "./content.js",
+    "./core": "./pet-core.js",
     "./locale/*.json": "./locale/*.json",
     "./icon": "./icon.png"
   },
   "files": [
     "index.js",
     "client.js",
+    "pet-core.js",
+    "content.js",
+    "src/*.js",
     "cordis.patch.yml",
     "locale/*.json",
     "icon.png",
     "assets/*.png",
     "assets/*.json",
+    "assets/outfits/**",
+    "desktop/*",
     "README.md"
   ],
   "dsh": {

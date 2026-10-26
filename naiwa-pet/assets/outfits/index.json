@@ -1,0 +1,50 @@
+{
+  "default": "classic",
+  "outfits": [
+    {
+      "id": "classic",
+      "name": {
+        "zh": "原色",
+        "en": "Classic"
+      },
+      "season": "classic",
+      "dir": null
+    },
+    {
+      "id": "hanfu-spring",
+      "name": {
+        "zh": "汉服·春",
+        "en": "Hanfu · Spring"
+      },
+      "season": "spring",
+      "dir": "hanfu-spring"
+    },
+    {
+      "id": "hanfu-summer",
+      "name": {
+        "zh": "汉服·夏",
+        "en": "Hanfu · Summer"
+      },
+      "season": "summer",
+      "dir": "hanfu-summer"
+    },
+    {
+      "id": "hanfu-autumn",
+      "name": {
+        "zh": "汉服·秋",
+        "en": "Hanfu · Autumn"
+      },
+      "season": "autumn",
+      "dir": "hanfu-autumn"
+    },
+    {
+      "id": "hanfu-winter",
+      "name": {
+        "zh": "汉服·冬",
+        "en": "Hanfu · Winter"
+      },
+      "season": "winter",
+      "dir": "hanfu-winter"
+    }
+  ]
+}

@@ -1,58 +1,126 @@
-# dsh-naiwa-pet（奶娃桌宠 demo）
+# dsh-naiwa-pet（奶娃桌宠）
 
-一只黄色小奶娃浮在 DeepSeek Harness 页面上：**能拖、会走、会眨眼、被点会撒娇**。
-精灵图按用户提供的三视图参考图重新抠制，正面 / 侧面 / 闭眼笑三帧。
+一只黄色小奶娃：既能浮在 DeepSeek Harness 页面里，也能放进**透明、置顶、不占任务栏**的桌面小窗。
+v0.2 起支持换装、右键功能菜单、动作/表情点播、四态显示位置和设置页。
 
-## 它现在会做什么
+## v0.2 能做什么
 
-| 能力       | 说明                                                                                      |
-| ---------- | ----------------------------------------------------------------------------------------- |
-| 停在桌面   | 注册进 `shell.overlay`，浮在整个页面之上；只有宠物本体可点，**不挡页面其它操作**          |
-| 拖动       | 按住拖走，带一点悬挂感和速度倾斜；松手后重力下落、弹跳、落地压扁、扬尘                    |
-| 行走       | 待机一阵后会自己沿着视口底部走到随机位置（侧面帧 + 摇摆步态，朝右自动镜像）               |
-| 待机小动作 | 呼吸、随机眨眼（闭眼帧）、偶发小跳 / 原地转圈 / 气泡碎碎念                                |
-| 互动       | 单击 = 受惊跳一下 + 爱心 + 闭眼笑 + 台词；双击 = 原地转圈                                 |
-| 记住位置   | 位置写 `localStorage`（`dsh-naiwa-pet:pos:v1`），刷新后还在原地；窗口缩放会自动夹回视口内 |
+| 能力        | 说明                                                                                    |
+| ----------- | --------------------------------------------------------------------------------------- |
+| 双形态      | `shell.overlay` 应用内浮窗 + Electron 桌面透明窗，共用同一份状态机与内容表              |
+| 拖动 / 甩飞 | 按住拖走；松手后带初速度飞出，撞左右墙反弹（保留 55% 速度）、落地弹跳压扁               |
+| 行走        | 应用内沿视口底部走；桌面窗低频整像素移动（避开混合 DPI 屏的窗口缩放问题）               |
+| 点击        | 随机播放一个动作（吃/小动作/喝/小情话）+ 闭眼笑 + 爱心 + 气泡；双击原地转圈             |
+| 自动动作    | 待机一段时间随机触发动作/转圈/碎碎念，间隔可配置                                        |
+| 表情        | 傲娇 / 害羞 / 享受 / 脸红 / 卖萌，叠加层，不占用动作状态机                              |
+| 换装        | 原色 + 汉服春夏秋冬；缺帧自动回退基础帧，不白屏                                         |
+| 右键菜单    | 动作、服饰、表情、打开应用、显示位置、设置、退出；两形态同一份 `content.js` 数据        |
+| 打开应用    | 固定 ID 白名单：DeepSeek 网页端、DSH 本机页面、用户自定义应用；未知 ID 返回 404         |
+| 显示位置    | `app` 仅应用内 / `desktop` 仅桌面 / `both` 两者都 / `none` 都不显示                     |
+| 设置        | DSH 设置页新增“桌宠”分区：大小、显示位置、服饰、动作间隔、自定义应用 JSON、桌面进程状态 |
 
 ## 结构
 
 ```
 naiwa-pet/
-├─ package.json        # bundle 清单：dsh.bundle.patch + dsh.client（web）
-├─ cordis.patch.yml    # 往配置树 insert 一行 dsh-naiwa-pet
-├─ index.js            # 宿主半侧：只读素材前缀路由 /dsh-naiwa-pet-7341
-├─ client.js           # 浏览器半侧：overlay 浮层 + 宠物状态机（无构建步骤）
-├─ locale/{zh,en}.json # 插件管理页的标题/描述
-├─ icon.png            # 插件图标
-└─ assets/             # 精灵帧（透明 PNG）与 sprite.json 元数据
+├─ package.json          # bundle 清单：dsh.bundle.patch + dsh.client（web）
+├─ cordis.patch.yml      # 往配置树 insert 一行 dsh-naiwa-pet
+├─ index.js              # 宿主：素材路由 + 配置读写 + 启动器 + 桌面进程托管
+├─ content.js            # 数据：动作 / 表情 / 菜单 / 内置应用 / 气泡文案（ESM）
+├─ pet-core.js           # 共享状态机 + 物理 + 表现描述 + CSS（ESM，无 DOM 依赖）
+├─ src/
+│  ├─ client-shell.js    # DSH 浏览器壳模板（React + 菜单 + 设置页）
+│  └─ desktop-renderer.js# 桌面渲染壳（DOM）
+├─ client.js             # 构建产物：client-shell + content + pet-core
+├─ desktop/
+│  ├─ main.cjs           # Electron 主进程：透明置顶窗 / 拖拽 / 物理 / 原生菜单
+│  ├─ preload.cjs        # 最小 IPC 桥
+│  ├─ pet.html           # 桌面页
+│  ├─ pet-app.js         # 构建产物：content + pet-core + desktop-renderer
+│  └─ window-physics.cjs # 纯函数窗口物理（可单测）
+├─ assets/               # 基础三帧 + sprite.json + outfits/ 换装素材
+├─ locale/{zh,en}.json   # 插件管理页标题/描述
+└─ icon.png
 ```
 
-- 宿主路由把 `assets/*.png` 直接交给页面，改图不用重装插件（浏览器缓存 5 分钟 + 弱 ETag）。
-- 浏览器半侧是纯 JS：状态机 + `requestAnimationFrame` 积分（重力/行走/弹跳），
-  CSS keyframes 负责呼吸、摇摆、压扁、爱心等表现；卸载时清理全部 rAF / timer / listener。
-- 文案走 Client locale 服务（命名空间 `naiwa.pet`）。
+构建：`node scripts/build-client.mjs`（仓库根目录）把 `content.js` / `pet-core.js` 内联进
+`client.js` 和 `desktop/pet-app.js`。**不要手改这两个产物**，`npm run verify` 会校验它们与源码一致。
 
-## 安装
+契约层自 v0.1 未变：仍然通过 `window.__ModuleLoader__.load({ id: 'dsh-naiwa-pet' })` 加载，
+仍然只向 `shell.overlay` 注册 `id: 'naiwa-pet', order: 1200` 这一个占位，素材仍走
+`/dsh-naiwa-pet-7341/assets/*` 前缀路由。
+
+## 配置
+
+配置文件：`$DSH_HOME/dsh-naiwa-pet/config.json`（Windows 默认 `C:\Users\<你>\.dsh\dsh-naiwa-pet\config.json`）。
+
+```json
+{
+  "displayMode": "app",
+  "petSize": 168,
+  "activeOutfit": "classic",
+  "autoActionInterval": "2800-6400",
+  "customApps": [{ "id": "vscode", "label": "VS Code", "type": "exec", "target": "code", "args": [] }]
+}
+```
+
+- `displayMode`：`app` / `desktop` / `both` / `none`
+- `petSize`：80–360，桌面窗与页面内同时生效
+- `activeOutfit`：`classic` / `hanfu-spring` / `hanfu-summer` / `hanfu-autumn` / `hanfu-winter`
+- `autoActionInterval`：毫秒，可写单值或 `min-max`
+- `customApps`：`url` 类型只接受 http(s)；`exec` 类型只按 argv 启动（`shell: false`）
+
+手动编辑该文件后，页面轮询（约 2.5s）与桌面进程的文件监听都会在无需重启的情况下应用。
+
+## 桌面形态
+
+宿主会按 `displayMode` 自动启停桌面进程；也可以手动启动：
+
+```text
+npm run desktop:start
+```
+
+Electron 解析顺序：`DSH_NAIWA_ELECTRON_PATH` → `$DSH_HOME/electron/electron.exe`（Linux/macOS 对应
+可执行文件）→ 包内 `node_modules/electron/dist`。找不到时设置页会显示“未找到 Electron”，
+`displayMode: desktop` 会自动回退为应用内，避免把宠物藏没。
+
+桌面窗的窗口位置、抛掷物理、自动溜达都在主进程；渲染页只画宠物并上报手势，宠物状态机仍然是
+`pet-core.js` 那一份。
+
+## 换装素材
+
+把图片放进 `assets/outfits/hanfu-<season>/`，规格见 [assets/outfits/README.md](assets/outfits/README.md)：
+640×768 透明 PNG、脚底基线 y=730、主体缩放与基础帧一致。`front.png` 必需，`front-closed.png` /
+`side.png` 可缺省（自动回退基础帧）。放好后刷新页面即可，不需要改 `meta.json`。
+
+## 安全模型
+
+- 素材是只读 GET；所有改机器状态的 POST（`/config`、`/launch`、`/desktop`、`/ping`）要求
+  loopback Host、同源 Origin（若存在）、`X-Naiwa-Pet: 1` 和 `application/json`，浏览器跨站无法伪造。
+- `/launch` 只接受固定 ID，未知 ID 返回 404，**绝不把请求内容当命令执行**。
+- 桌面进程只用固定 argv 拉起，环境里会删掉 `ELECTRON_RUN_AS_NODE`。
+
+## 安装 / 调试
 
 ```text
 plugin_manager install_bundle  target = <绝对路径>/naiwa-pet
 ```
 
-安装后若页面没出现奶娃，刷新一次页面。插件是 bundle，改动 `client.js` 后需要重新安装 / 重启以加载新的 JS 代。
+- 改 `assets/*.png`：不用重装，弱 ETag + `no-cache`，刷新即取新图。
+- 改 `client.js` / `pet-core.js` / `content.js`：`node scripts/build-client.mjs` 后
+  `remove_bundle` → `install_bundle`，并刷新页面。
+- 改 `index.js`：同样需要重新安装。
+- 自检：`GET /dsh-naiwa-pet-7341/config` 的 `client.part` 是浏览器半侧上报的挂载位置
+  （`overlay` / `settings`）；为 `null` 说明页面还没加载到新客户端。
+- 桌面形态自检：`desktop.running` 与 `desktop.electron`；窗口的 CDP 检查可用
+  `--remote-debugging-port` 手动启动后跑 `.temp` 里的临时脚本（不进仓库）。
 
 ## 和 dsh-pet 共存
 
-本插件是独立的 bundle，不会改动 `dsh-pet`（那只蓝色大肥鱼）的任何东西。
-两只宠物可以同时在场；不想看到鱼的话，把 `dsh-pet` bundle 关掉即可。
+本插件是独立 bundle，不会改动 `dsh-pet`（那只蓝色大肥鱼）的任何东西。两只宠物可以同时在场。
 
-## 调参
+## ������̬ʵ��
 
-- 体型：`client.js` 顶部 `FRAME_W`（默认 168px）
-- 步速 / 重力 / 落地弹跳：`WALK_SPEED`、`GRAVITY`、`airStep()` 里的 `0.34`
-- 待机频率：`scheduleThink()` 的 `rand(2800, 6400)`
-- 台词：`ZH` / `EN` 两张字典
+![����͸����ʵ��](assets/preview-desktop.png)
 
-## 素材
-
-`assets/` 由三视图参考图抠制：三帧同画布（640×768）、同主体缩放、同脚底基线，保证叠放与交叉淡入不跳动。
-`sprite.json` 里记录画布尺寸、主体包围盒、脚底基线与眼睛位置百分比，方便以后做换装或加帧。
+��CDP ץ�Ĵ������ݣ�͸�������������洩͸�����ڱ����ö����ޱ߿򡢲�������������

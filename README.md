@@ -1,16 +1,24 @@
 # naiwa-pet
 
-DSH（DeepSeek Harness）插件 `dsh-naiwa-pet`：一只浮在 Harness 页面上的黄色奶娃桌宠，外加本仓库的
-测试与验证门禁。插件本身是零依赖的 bundle；仓库根目录的 Node 依赖只服务 lint / format / commit 校验。
+DSH（DeepSeek Harness）插件 `dsh-naiwa-pet`：一只黄色奶娃桌宠，v0.2 起有**双形态** ——
+DSH 页面内的 `shell.overlay` 浮窗，以及 Electron **透明、置顶、不占任务栏**的桌面小窗。
+插件本身零运行时依赖；仓库根目录的 Node 依赖只服务构建、lint / format / commit 校验。
 
 执行规则见 [AGENTS.md](AGENTS.md)（提交、测试门禁、依赖部署）。
 
 ## 目录
 
 ```text
-naiwa-pet/          # 可安装的 DSH bundle（宿主半侧 index.js + 浏览器半侧 client.js + 精灵素材）
-tests/              # node:test 契约测试（manifest / sprite / 素材路由 / 客户端契约）
-scripts/            # 门禁脚本：build、static、secrets、dangerous、verify、hooks 安装
+naiwa-pet/          # 可安装的 DSH bundle
+  index.js          #   宿主：素材路由 / 配置读写 / 固定 ID 启动器 / 桌面进程托管
+  content.js        #   数据：动作、表情、菜单、内置应用
+  pet-core.js       #   共享状态机 + 物理 + 表现描述
+  src/              #   两套宿主壳源码（构建时内联）
+  client.js         #   构建产物（DSH 浏览器半侧）
+  desktop/          #   Electron 桌面壳 + 构建产物 pet-app.js
+  assets/outfits/   #   换装素材目录（含用户素材契约）
+tests/              # node:test 契约测试（含核心状态机、宿主接口、桌面物理）
+scripts/            # 门禁脚本：build/client、static、secrets、dangerous、verify、hooks、publish、dns
 .githooks/          # pre-commit（门禁）、commit-msg（Conventional Commits）
 .github/workflows/  # CI：完整 verify
 tools/              # 精灵素材重建脚本与预览图（不随插件发布）
@@ -23,8 +31,23 @@ plugin_manager install_bundle  target = <仓库绝对路径>/naiwa-pet
 ```
 
 - 改 `naiwa-pet/assets/*.png` **不需要**重装：宿主路由带 `no-cache + ETag`，刷新页面即取新图。
-- 改 `naiwa-pet/client.js` 必须 `remove_bundle` → `install_bundle`，才会加载新的浏览器 JS 代。
+- 改 `content.js` / `pet-core.js` / `src/*` 后先 `npm run build`，再 `remove_bundle` → `install_bundle`，
+  并刷新页面（模块系统不会热替换已加载的 JS 代）。
+- 改 `index.js` 同样需要重新安装。
 - 本插件与 `dsh-pet`（蓝鱼）互不依赖，可同时在场；只想留奶娃就把 `dsh-pet` bundle 关掉。
+
+## 桌面形态与配置
+
+```text
+npm run desktop:start        # 手动打开桌面小窗（会先把 displayMode 写成 desktop）
+```
+
+- 显示位置四态：`app` / `desktop` / `both` / `none`，在右键菜单或 DSH 设置页“桌宠”里切换。
+- 配置文件：`$DSH_HOME/dsh-naiwa-pet/config.json`（大小、服饰、动作间隔、自定义应用），
+  手动编辑后页面与桌面进程都会热更新。
+- Electron 解析顺序：`DSH_NAIWA_ELECTRON_PATH` → `$DSH_HOME/electron` → 包内 `node_modules/electron`。
+- 换装素材规格与放置方式见 [naiwa-pet/assets/outfits/README.md](naiwa-pet/assets/outfits/README.md)。
+- 完整功能、安全模型与调试自检见 [naiwa-pet/README.md](naiwa-pet/README.md)。
 
 ## 验证门禁
 
@@ -43,12 +66,12 @@ npm run verify
 也可以单步跑：
 
 ```text
-npm run build      # 包清单 / 文件白名单 / patch 行 / 素材引用一致性
-npm test           # 27 项 node:test（--test-isolation=none，沙箱可用）
+npm run build      # 生成 client.js / desktop/pet-app.js + 包清单 / 文件白名单 / 换装素材校验
+npm test           # node:test 契约测试（--test-isolation=none，沙箱可用）
 npm run lint       # eslint
 npm run format:check
 npm run static     # 语法、JSON、YAML 形状、PNG 头
-npm run security   # 密钥扫描 + 危险原语扫描
+npm run security   # 密钥扫描 + 危险原语扫描（audited 例外见脚本注释）
 ```
 
 约定：

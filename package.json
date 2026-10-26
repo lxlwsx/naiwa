@@ -8,10 +8,11 @@
     "node": ">=20.19.0"
   },
   "scripts": {
-    "build": "node scripts/check-package.mjs",
-    "test": "node --test --test-isolation=none tests/manifest.test.mjs tests/assets.test.mjs tests/host-route.test.mjs tests/client-contract.test.mjs tests/publish.test.mjs tests/dns.test.mjs",
+    "build": "node scripts/build-client.mjs && node scripts/check-package.mjs",
+    "test": "node --test --test-isolation=none tests/manifest.test.mjs tests/assets.test.mjs tests/host-config.test.mjs tests/host-route.test.mjs tests/client-contract.test.mjs tests/pet-core.test.mjs tests/content.test.mjs tests/desktop.test.mjs tests/publish.test.mjs tests/dns.test.mjs",
     "publish:github": "node scripts/publish-github.mjs",
     "dns:check": "node scripts/check-github-dns.mjs",
+    "desktop:start": "node scripts/start-desktop.mjs",
     "lint": "node node_modules/eslint/bin/eslint.js .",
     "format": "node node_modules/prettier/bin/prettier.cjs --write .",
     "format:check": "node node_modules/prettier/bin/prettier.cjs --check .",
